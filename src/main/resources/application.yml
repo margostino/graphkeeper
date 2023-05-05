@@ -1,0 +1,48 @@
+"%dev":
+  quarkus:
+    package:
+      type: fast-jar
+    rest-client:
+      ping:
+        uri: http://gobox:10001
+        scope: javax.inject.Singleton
+      healthCheck:
+        uri: http://gobox:10001
+        scope: javax.inject.Singleton
+
+"%native":
+  quarkus:
+    package:
+      type: native
+    native:
+      container-build: true
+      container-runtime: docker
+      builder-image: margostino/quarkus-build-aarch64 # only for aarch64, disable otherwise
+#      additional-build-args: --initialize-at-run-time=org.apache.http.conn.ssl.SSLConnectionSocketFactory, --initialize-at-build-time=org.apache.http.conn.ssl.SSLConnectionSocketFactory, --trace-class-initialization=org.apache.http.conn.ssl.SSLConnectionSocketFactory
+      additional-build-args: -J-Dorg.jboss.resteasy.microprofile.defaultToURLConnectionHttpClient=true
+    smallrye-graphql:
+      ui:
+        always-include: true
+    rest-client:
+      ping:
+        uri: http://host.docker.internal:10000
+        scope: javax.inject.Singleton
+      healthCheck:
+        uri: http://host.docker.internal:10000
+        scope: javax.inject.Singleton
+
+quarkus:
+  banner:
+    path: header.txt
+
+  log:
+    level: INFO
+    category:
+      "org.margostino":
+        level: ALL
+      "io.quarkus":
+        level: INFO
+      "org.apache":
+        level: INFO
+    console:
+      json: false
