@@ -1,0 +1,7 @@
+sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java17-22.3.0
+graalvm17
+gu info
+gu available
+gu install native-image
+quarkus build -Dquarkus.profile=native
+./gradlew quarkusBuild -Dquarkus.profile=dev
