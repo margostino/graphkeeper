@@ -3,13 +3,13 @@
     package:
 #      type: fast-jar
       type: uber-jar
-    rest-client:
-      ping:
-        uri: http://gobox:10001
-        scope: javax.inject.Singleton
-      healthCheck:
-        uri: http://gobox:10001
-        scope: javax.inject.Singleton
+#    rest-client:
+#      ping:
+#        uri: http://host.docker.internal:10001
+#        scope: javax.inject.Singleton
+#      healthCheck:
+#        uri: http://host.docker.internal:10001
+#        scope: javax.inject.Singleton
 
 "%native":
   quarkus:

@@ -5,7 +5,7 @@ SHELL = /bin/sh
 -include .env .env.local .env.*.local
 
 # Defaults
-BUILD_VERSION ?= SNAPSHOT
+BUILD_VERSION ?= "1.0.0-SNAPSHOT"
 IMAGE_NAME := ${DOCKER_REPO}/${SERVICE_NAME}:${BUILD_VERSION}
 IMAGE_NAME_LATEST := ${DOCKER_REPO}/${SERVICE_NAME}:latest
 DOCKER_COMPOSE = USERID=$(shell id -u):$(shell id -g) docker-compose ${compose-files}
@@ -70,7 +70,7 @@ b.clean:
 	./gradlew -no-build-cache -PbuildVersion=${BUILD_VERSION} clean
 
 b.build:
-	./gradlew quarkusBuild --uber-jar -PbuildVersion=${BUILD_VERSION} -x :test
+	./gradlew quarkusBuild -Dquarkus.profile=dev -PbuildVersion=${BUILD_VERSION} -x :test
 
 .PHONY: test.unit
 test.unit:
@@ -152,14 +152,14 @@ d.login:
 # d.build:
 # 	docker build --no-cache --build-arg BUILD_VERSION=${BUILD_VERSION} -t ${image-name} .
 
-d.build:
-	docker build -f src/main/docker/Dockerfile -t graphkeeper/graphkeeper .
+#d.build:
+#	docker build -f src/main/docker/Dockerfile -t graphkeeper/graphkeeper .
 
 d.build.jvm:
-	docker build -f src/main/docker/Dockerfile.jvm -t graphkeeper/graphkeeper .
+	docker build -f src/main/docker/Dockerfile.jvm -t ${IMAGE_NAME} .
 
 d.build.native:
-	docker build -f src/main/docker/Dockerfile.native -t graphkeeper/graphkeeper .
+	docker build -f src/main/docker/Dockerfile.native -t ${IMAGE_NAME} .
 
 d.push:
 	docker push ${image-name}
@@ -170,11 +170,11 @@ d.snapshot.tag.latest:
 
 .PHONY: docker.wait
 docker.wait:
-	./bin/docker-wait
+	./docker/docker-wait
 
 .PHONY: docker.logs
 docker.logs:
-	./bin/docker-logs
+	./docker/docker-logs
 
 .PHONY: git.tag
 git.tag: g.tag g.push
