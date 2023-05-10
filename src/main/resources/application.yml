@@ -1,15 +1,16 @@
 "%dev":
   quarkus:
+    http:
+      port: 8081
     package:
-#      type: fast-jar
+      type: fast-jar
+
+"%docker":
+  quarkus:
+    http:
+      port: 8080
+    package:
       type: uber-jar
-#    rest-client:
-#      ping:
-#        uri: http://host.docker.internal:10001
-#        scope: javax.inject.Singleton
-#      healthCheck:
-#        uri: http://host.docker.internal:10001
-#        scope: javax.inject.Singleton
 
 "%native":
   quarkus:
@@ -38,6 +39,7 @@ quarkus:
     category:
       "org.margostino":
         level: ALL
+        min-level: ALL
       "io.quarkus":
         level: INFO
       "org.apache":

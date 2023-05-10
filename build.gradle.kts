@@ -28,6 +28,7 @@ dependencies {
     implementation("com.hazelcast:quarkus-hazelcast-client:4.0.0")
     //implementation("io.smallrye.config:smallrye-config-source-yaml:3.2.1")
     implementation("io.quarkus:quarkus-config-yaml:3.0.2.Final")
+    implementation("io.quarkus:quarkus-logging-json:3.0.2.Final")
     compileOnly("jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.1")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")

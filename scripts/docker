@@ -19,6 +19,8 @@ docker_wait_until_healthy_or_none(){
     sleep 10
     docker_wait_until_healthy_or_none $((wait+10)) $total_wait
   done
+  echo "docker_wait success"
+  exit 0
 }
 
 docker_validate(){
@@ -33,7 +35,31 @@ docker_validate(){
       exit 1
   fi
   echo "docker_validate success"
+  exit 0
 }
 
-docker_wait_until_healthy_or_none 0 15
-docker_validate
+wait_and_validate(){
+  docker_wait_until_healthy_or_none 0 15
+  docker_validate
+}
+
+generate_app_log() {
+    for i in $(docker ps -a --format "{{.ID}}:{{.Label \"com.docker.compose.service\"}}"); do
+        CONTAINER_ID=$(echo $i | cut -d':' -f1)
+        SERVICE_NAME=$(echo $i | cut -d':' -f2)
+        docker logs $CONTAINER_ID >> $SERVICE_NAME.log
+    done;
+}
+
+stop_and_clean_docker_world() {
+    clear
+    docker-compose -f docker-compose.yml --project-name ${DOCKER_PROJECT_NAME} down -v || true
+    docker-compose -f docker-compose.yml --project-name ${DOCKER_PROJECT_NAME} rm --force || true
+    docker stop "$(docker ps -a -q)" -f || true
+    docker rm "$(docker ps -a -q)" -f || true
+    remove_image
+}
+
+COMMAND=$1
+shift
+${COMMAND} "$@"

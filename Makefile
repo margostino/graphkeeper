@@ -9,9 +9,11 @@ BUILD_VERSION ?= "1.0.0-SNAPSHOT"
 IMAGE_NAME := ${DOCKER_REPO}/${SERVICE_NAME}:${BUILD_VERSION}
 IMAGE_NAME_LATEST := ${DOCKER_REPO}/${SERVICE_NAME}:latest
 DOCKER_COMPOSE = USERID=$(shell id -u):$(shell id -g) docker-compose ${compose-files}
+#DOCKER_HOST=$(ifconfig | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v 127.0.0.1 | awk '{ print $2 }' | cut -f2 -d: | head -n1)
+DOCKER_HOST="host.docker.internal"
 ALL_ENVS := local ci
 env ?= local
-gk-instances ?= 1
+gk-instances ?= 2
 docker-snapshot ?= true
 
 ifndef SERVICE_NAME
@@ -27,22 +29,16 @@ help:
 	@echo "GraphKeeper (GK) pipeline"
 	@echo ""
 	@echo "Usage:"
-	@echo "  build                          - Build artifact"
+	@echo "  build                          - Build artifact and docker image"
+	@echo "  build.native                   - Build artifact and native docker image"
 	@echo "  test.unit                      - Run unit tests"
 	@echo "  test.integration               - Run integration tests"
 	@echo "  test.api                       - Run api tests"
 	@echo "  test.resiliency                - Run resiliency tests"
-	@echo "  docker.publish                 - Publish docker image (used for internal/external testing purposes) to artifactory. Receives parameter docker-snapshot (default true)"
+	@echo "  docker.run                 	- Spin up all container defined in docker compose for Demo"
+	@echo "  docker.run.gk                 	- Run only GraphKeeper docker container"
 	@echo "  docker.wait                    - Waits until all docker containers have exited successfully and/or are healthy. Timeout: 180 seconds"
-	@echo "  docker.logs                    - Generate one log file per each service running in docker-compose"
-	@echo "  git.tag                        - Creates a new tag and pushes it to the git repository. Used to tag the current commit as a released artifact"
-	@echo ""
-	@echo "  ** The following tasks receive an env parameter to determine the environment they are being executed in. Default env=${env}, possible env values: ${ALL_ENVS}:"
-	@echo "  docker.run.all                 - Run GK service and all it's dependencies with docker-compose (default env=${env})"
-	@echo "  docker.run.dependencies        - Run only GK dependencies with docker-compose (default env=${env})". Note that `build` might need to be executed prior.
-	@echo "  docker.run.gk                - Build and run GK container in detached mode. Recreate it if already running (default env=${env})"
-	@echo "  docker.run.gk.debug          - Build and run GK container in un-detached mode. Recreate it if already running (default env=${env})"
-	@echo "  docker.stop                    - Stop and remove all running containers from this project using docker-compose down (default env=${env})"
+	@echo "  stop.world               		- Stop all docker containers running"
 	@echo ""
 	@echo "Project-level environment variables are set in .env file:"
 	@echo "  SERVICE_NAME=graphkeeper"
@@ -55,22 +51,10 @@ help:
 	@echo ""
 
 .PHONY: build
-build: b.clean b.build
+build: prepare.config b.clean b.build d.build
 
-.PHONY: docker.build
-docker.build: b.clean b.build d.build
-
-.PHONY: docker.build.jvm
-docker.build.jvm: b.clean b.build d.build.jvm
-
-.PHONY: docker.build.native
-docker.build.native: b.clean b.build d.build.native
-
-b.clean:
-	./gradlew -no-build-cache -PbuildVersion=${BUILD_VERSION} clean
-
-b.build:
-	./gradlew quarkusBuild -Dquarkus.profile=dev -PbuildVersion=${BUILD_VERSION} -x :test
+.PHONY: build.native
+build.native: prepare.config b.clean b.build d.build.native
 
 .PHONY: test.unit
 test.unit:
@@ -88,32 +72,31 @@ test.api:
 test.resiliency:
 	### TODO
 
-.PHONY: docker.run.all
-docker.run.all: d.compose.down
-	make d.compose.up gk-instances=1
+.PHONY: build.run
+build.run: build
+	make docker.run
+
+.PHONY: docker.run
+docker.run: d.compose.down
+	make d.compose.up
 	make docker.wait
 
 .PHONY: docker.run.dependencies
 docker.run.dependencies: d.compose.down
-	make d.compose.up gk-instances=0 db-creator-instances=0
+	make d.compose.up
 	make docker.wait
-	docker-compose up -d db-creator
 	docker-compose ps
 
 .PHONY: docker.run.gk
 docker.run.gk:
-	$(call DOCKER_COMPOSE) up -d --force-recreate --build graphkeeper
-
-.PHONY: docker.run.gk.debug
-docker.run.gk.debug: build
-	$(call DOCKER_COMPOSE) up --force-recreate --build graphkeeper
+	$(call DOCKER_COMPOSE) up -d --force-recreate --build graphkeeper_1
 
 .PHONY: docker.stop
 docker.stop: d.compose.down
 
 .PHONY: d.compose.up
 d.compose.up:
-	$(call DOCKER_COMPOSE) up -d --remove-orphans --build --scale graphkeeper=${gk-instances} --scale db-creator=${db-creator-instances}
+	$(call DOCKER_COMPOSE) up -d --remove-orphans --build
 
 .PHONY: d.compose.down
 d.compose.down:
@@ -121,30 +104,26 @@ d.compose.down:
 	$(call DOCKER_COMPOSE) rm --force || true
 	docker rm "$(docker ps -a -q)" -f || true
 
-### ------------------------
-### Pipeline's utility tasks
-### ------------------------
+.PHONY: docker.wait
+docker.wait:
+	./scripts/docker wait_and_validate
 
-.PHONY: docker.publish
-docker.publish:
-ifeq (${docker-snapshot}, true)
-docker.publish: d.publish.snapshot
-else
-docker.publish: d.publish
-endif
+.PHONY: docker.logs
+docker.logs:
+	./scripts/docker-logs
 
-d.publish.snapshot:
-	$(info Publishing docker image: '${IMAGE_NAME}-SNAPSHOT' to artifactory)
-	make build d.login
-	make d.build image-name=${IMAGE_NAME}-SNAPSHOT
-	make d.push image-name=${IMAGE_NAME}-SNAPSHOT
+prepare.config:
+	DOCKER_HOST=$(value DOCKER_HOST) ./scripts/build prepare_config_files
 
-d.publish:
-	$(info Publishing docker image: '${IMAGE_NAME}' and '${IMAGE_NAME_LATEST}' to artifactory)
-	@if [ ${BUILD_VERSION} = "SNAPSHOT" ]; then printf "\033[91mBuild version can't be SNAPSHOT\033[0m\n"; exit 1; fi
-	make d.login d.snapshot.tag.latest
-	make d.push image-name=${IMAGE_NAME}
-	make d.push image-name=${IMAGE_NAME_LATEST}
+.PHONY: stop.world
+stop.world:
+	DOCKER_PROJECT_NAME=${DOCKER_PROJECT_NAME} ./scripts/docker stop_and_clean_docker_world
+
+b.clean:
+	./gradlew -no-build-cache -PbuildVersion=${BUILD_VERSION} clean
+
+b.build:
+	./gradlew quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
 
 d.login:
 	docker login -u ${DOCKER_USER} ${DOCKER_PASSWORD} ${DOCKER_REPO}
@@ -155,32 +134,9 @@ d.login:
 #d.build:
 #	docker build -f src/main/docker/Dockerfile -t graphkeeper/graphkeeper .
 
-d.build.jvm:
+d.build:
 	docker build -f src/main/docker/Dockerfile.jvm -t ${IMAGE_NAME} .
 
 d.build.native:
 	docker build -f src/main/docker/Dockerfile.native -t ${IMAGE_NAME} .
 
-d.push:
-	docker push ${image-name}
-
-d.snapshot.tag.latest:
-	docker tag ${IMAGE_NAME}-SNAPSHOT ${IMAGE_NAME}
-	docker tag ${IMAGE_NAME}-SNAPSHOT ${IMAGE_NAME_LATEST}
-
-.PHONY: docker.wait
-docker.wait:
-	./docker/docker-wait
-
-.PHONY: docker.logs
-docker.logs:
-	./docker/docker-logs
-
-.PHONY: git.tag
-git.tag: g.tag g.push
-
-g.tag:
-	git tag -a -m ${BUILD_VERSION} ${BUILD_VERSION} $(git rev-parse HEAD)
-
-g.push:
-	git push origin refs/tags/${BUILD_VERSION}:refs/tags/${BUILD_VERSION}

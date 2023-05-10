@@ -1,20 +1,71 @@
 version: '3.8'
 
+networks:
+  demo:
+
 services:
-  graphkeeper:
+  load_balancer:
+      image: nginx
+      container_name: load_balancer
+      networks:
+        - demo
+      ports:
+        - "5000:80"
+      depends_on:
+        - graphkeeper_1
+        - graphkeeper_2
+      volumes:
+        - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+
+  graphkeeper_1:
       image: margostino/graphkeeper:1.0.0-SNAPSHOT
+      container_name: graphkeeper_1
       environment:
         - QUARKUS_PROFILE=docker
+      networks:
+        - demo
       ports:
-        - "8080:8080"
+        - "5001:8080"
       healthcheck:
-        test: ["CMD", "curl", "graphkeeper:8080/ping | grep UP || exit 1"]
+        test: ["CMD", "curl", "localhost:8080/ping | grep UP || exit 1"]
         interval: 15s
         timeout: 5s
         retries: 20
         start_period: 10s
       extra_hosts:
         - "host.docker.internal:host-gateway"
+
+  graphkeeper_2:
+      image: margostino/graphkeeper:1.0.0-SNAPSHOT
+      container_name: graphkeeper_2
+      environment:
+        - QUARKUS_PROFILE=docker
+      networks:
+        - demo
+      ports:
+        - "5002:8080"
+      healthcheck:
+        test: ["CMD", "curl", "localhost:8080/ping | grep UP || exit 1"]
+        interval: 15s
+        timeout: 5s
+        retries: 20
+        start_period: 10s
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+
+  hazelcast_manager:
+    image: hazelcast/management-center
+    container_name: hazelcast_manager
+    networks:
+        - demo
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - JAVA_OPTS=-Dhazelcast.mc.healthCheck.enable=true --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+      - MC_INIT_CMD=/opt/hazelcast/mancenter/mc-conf.sh create-user -H=/data -n=gk -p=ampx2020 -r=admin -v
 
 #  grafana:
 #    image: grafana/grafana
