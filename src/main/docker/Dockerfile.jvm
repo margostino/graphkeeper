@@ -88,9 +88,11 @@ ENV QUARKUS_PROFILE=docker
 #COPY --chown=185 build/quarkus-app/app/ /deployments/app/
 #COPY --chown=185 build/quarkus-app/quarkus/ /deployments/quarkus/
 COPY build/*-runner.jar /deployments/graphkeeper.jar
+COPY build/resources/main/entrypoint.sh /deployments/entrypoint.sh
 
 EXPOSE 8080
 USER 185
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV JAVA_APP_JAR="/deployments/graphkeeper.jar"
 
+ENTRYPOINT ["/deployments/entrypoint.sh"]

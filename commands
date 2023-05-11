@@ -5,3 +5,14 @@ gu available
 gu install native-image
 quarkus build -Dquarkus.profile=native
 ./gradlew quarkusBuild -Dquarkus.profile=dev
+
+
+docker network inspect graphkeeper_demo
+docker inspect -f '{{ .NetworkSettings.Networks.graphkeeper_demo.IPAddress }}' graphkeeper_1
+ipconfig getifaddr en0
+ifconfig | grep "inet " | grep -Fv 127.0.0.1 | awk '{print $2}'
+IP=$(awk 'END{print $1}' /etc/hosts)
+
+uname -a
+
+sh /opt/run-java/run/run-java.sh

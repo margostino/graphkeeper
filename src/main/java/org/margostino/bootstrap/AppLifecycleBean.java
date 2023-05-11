@@ -14,7 +14,9 @@ import static java.lang.String.format;
 public class AppLifecycleBean {
 
     void onStart(@Observes StartupEvent ev) {
-        Log.info(format("GraphKeeper is starting with profile `%s`", ProfileManager.getActiveProfile()));
+        String ip = System.getenv("CONTAINER_IP_ADDRESS");
+        String profile = ProfileManager.getActiveProfile();
+        Log.info(format("GraphKeeper is starting with profile `%s` (%s)", profile, ip));
     }
 
     void onStop(@Observes ShutdownEvent ev) {
