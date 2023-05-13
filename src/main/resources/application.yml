@@ -4,6 +4,8 @@
       port: 8081
     package:
       type: fast-jar
+  database:
+    hostname: localhost
 
 "%docker":
   quarkus:
@@ -40,9 +42,17 @@ quarkus:
       "org.margostino":
         level: ALL
         min-level: ALL
+      "com.hazelcast.system.logo":
+        level: WARN
       "io.quarkus":
         level: INFO
       "org.apache":
         level: INFO
     console:
       json: false
+
+hazelcast:
+  config: hazelcast.yml
+
+database:
+    hostname: localhost

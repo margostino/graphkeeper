@@ -10,6 +10,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.margostino.datagrid.DataGrid;
 
+import java.util.Random;
+
 @Path("/hello")
 @ApplicationScoped
 public class GreetingResource {
@@ -22,6 +24,7 @@ public class GreetingResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
         Log.info("New Hello Request");
+        dataGrid.replicatedMap.put("test", new Random().nextInt(10));
         return "Hello from GraphKeeper!";
     }
 

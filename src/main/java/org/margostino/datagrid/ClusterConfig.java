@@ -7,15 +7,22 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static java.lang.String.format;
 
 @ApplicationScoped
-public class HazelcastClientConfig {
+public class ClusterConfig {
+
+//    @ConfigProperty(name = "hazelcast.network.port.auto-increment")
+//    Boolean message;
+    @ConfigProperty(name = "database.hostname")
+    public String hostname;
 
     @Produces
     protected HazelcastInstance createInstance() {
+        hostname = "";
 //        ClientConfig clientConfig = new ClientConfig();
 //        String[] members = new String[]{getenv("CONTAINER_IP_ADDRESS")};
 //        clientConfig.getNetworkConfig().addAddress(members);
@@ -40,21 +47,25 @@ public class HazelcastClientConfig {
 //                .setMulticastPort(54327);
 
 
-        Config hazelcastConfig = new Config();
-        NetworkConfig network = hazelcastConfig.getNetworkConfig();
+        Config config = new Config();
+        //config.setProperty("hazelcast.logging.type", "none");
+        //config.setProperty("hazelcast.logging.type", "none");
+        //config.setProperty("logger.com.hazelcast.system.logo", "debug");
+
+        NetworkConfig network = config.getNetworkConfig();
         network.setPort(5701).setPortCount(20);
         network.setPortAutoIncrement(true);
+
         JoinConfig join = network.getJoin();
         join.getTcpIpConfig().setEnabled(false);
         join.getMulticastConfig().setEnabled(true);
-        //join.getKubernetesConfig().setEnabled(true);
-        final String hazelcastManagerUrl = format("http://%s:%s/%s", "localhost", "8080", "hazelcast-manager");
+
+        //final String hazelcastManagerUrl = format("http://%s:%s/%s", "localhost", "8080", "hazelcast-manager");
         ManagementCenterConfig manCenterCfg = new ManagementCenterConfig().setConsoleEnabled(true);//.setUrl(hazelcastManagerUrl);
-        hazelcastConfig.setManagementCenterConfig(manCenterCfg);
-        //return new HazelcastClusterManager(hazelcastConfig);
+        config.setManagementCenterConfig(manCenterCfg);
 
-
-        return newHazelcastInstance(hazelcastConfig);
+        //return newHazelcastInstance(config);
+        return newHazelcastInstance();
     }
 
 }
