@@ -1,14 +1,56 @@
-# graphkeeper
+# GraphKeeper
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+GraphKeeper is a highly reliable distributed coordination service for maintaining GraphQL Schema and Data Fetcher configuration providing distributed synchronization.
+GraphKeeper implements a [sidecar pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/sidecar) for GraphQL Server applications.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+## When to use GraphKeeper
+
+Use this service when:
+
+GraphKeeper is suitable for GraphQL Servers with Schemas and Data Fetcher configurations which mutate very often (i.e. daily, weekly), business logic does not change and Data Fetchers share same API contract downstream. 
+Traditionally this operation would involve a deployment to update a new GraphQL Schema, Data Fetcher configurations or both. 
+GraphKeeper might fit for cases where the amount of time and effort for deploying a GraphQL server application is significant and repetitive so integrating 
+your application side-by-side with GraphKeeper may save time and make your process more agile and flexible.
+
+1. GraphQL Schema changes very often (i.e. daily, weekly).
+2. Data Fetchers share same API contract downstream.
+
+GraphKeeper can be containerized and deployed side-by-side with its client application server, or as a remote service.
+
+This service may not be suitable when:
+
+1. GraphQL Schema rarely change.
+2. GraphQL Schema is highly complex.
+3. Data Fetchers have their own API contract downstream.
+4. Data Fetchers have complex and not common logic each others. 
+
+## Issues and considerations
+TBD
+
+## Stack
+
+This project uses [Quarkus](https://quarkus.io/) as Java Framework and [Hazelcast IMDG](https://docs.hazelcast.com/imdg/4.2/overview/what-is-imdg) for data replication.
+You can build a [native](https://quarkus.io/guides/building-native-image) (disabled temporarily) or JVM docker image.  
+
+## Demo
+Build JVM mode
+```shell script
+> make build
+```
+Build native (disabled temporarily)
+```shell script
+> make native
+```
+Build JVM mode & Run at once
+```shell script
+> make build.run
+```
 
 ## Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
-./gradlew quarkusDev
+> ./gradlew quarkusDev
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
@@ -45,23 +87,3 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 
 You can then execute your native executable with: `./build/graphkeeper-1.0.0-SNAPSHOT-runner`
 
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/gradle-tooling.
-
-## Related Guides
-
-- Mutiny ([guide](https://quarkus.io/guides/mutiny-primer)): Write reactive applications with the modern Reactive Programming library Mutiny
-- Eclipse Vert.x ([guide](https://quarkus.io/guides/vertx)): Write reactive applications with the Vert.x API
-- Micrometer Registry Prometheus ([guide](https://quarkus.io/guides/micrometer)): Enable Prometheus support for Micrometer
-- SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Document your REST APIs with OpenAPI - comes with Swagger UI
-- RESTEasy Reactive ([guide](https://quarkus.io/guides/resteasy-reactive)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- SmallRye Context Propagation ([guide](https://quarkus.io/guides/context-propagation)): Propagate contexts between managed threads in reactive applications
-- Reactive Routes ([guide](https://quarkus.io/guides/reactive-routes)): REST framework offering the route model to define non blocking endpoints
-- Micrometer metrics ([guide](https://quarkus.io/guides/micrometer)): Instrument the runtime and your application with dimensional metrics using Micrometer.
-
-## Provided Code
-
-### RESTEasy Reactive
-
-Easily start your Reactive RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
