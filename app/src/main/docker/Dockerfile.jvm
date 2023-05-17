@@ -87,9 +87,9 @@ ENV QUARKUS_PROFILE=docker
 #COPY --chown=185 build/quarkus-app/*.jar /deployments/
 #COPY --chown=185 build/quarkus-app/app/ /deployments/app/
 #COPY --chown=185 build/quarkus-app/quarkus/ /deployments/quarkus/
-COPY build/*-runner.jar /deployments/graphkeeper.jar
-COPY build/resources/main/entrypoint.sh /deployments/entrypoint.sh
-COPY build/resources/main/hazelcast.yml /deployments/hazelcast.yml
+COPY app/build/*-runner.jar /deployments/graphkeeper.jar
+COPY app/build/resources/main/entrypoint.sh /deployments/entrypoint.sh
+COPY app/build/resources/main/hazelcast.yml /deployments/hazelcast.yml
 
 EXPOSE 8080
 USER 185

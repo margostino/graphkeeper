@@ -6,8 +6,10 @@ SHELL = /bin/sh
 
 # Defaults
 BUILD_VERSION ?= "1.0.0-SNAPSHOT"
-IMAGE_NAME := ${DOCKER_REPO}/${SERVICE_NAME}:${BUILD_VERSION}
-IMAGE_NAME_LATEST := ${DOCKER_REPO}/${SERVICE_NAME}:latest
+APP_IMAGE_NAME := ${DOCKER_REPO}/${APP_SERVICE_NAME}:${BUILD_VERSION}
+APP_IMAGE_NAME_LATEST := ${DOCKER_REPO}/${APP_SERVICE_NAME}:latest
+DEMO_IMAGE_NAME := ${DOCKER_REPO}/${DEMO_SERVICE_NAME}:${BUILD_VERSION}
+DEMO_IMAGE_NAME_LATEST := ${DOCKER_REPO}/${DEMO_SERVICE_NAME}:latest
 DOCKER_COMPOSE = USERID=$(shell id -u):$(shell id -g) docker-compose ${compose-files}
 #DOCKER_HOST=$(ifconfig | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | grep -v 127.0.0.1 | awk '{ print $2 }' | cut -f2 -d: | head -n1)
 DOCKER_HOST="host.docker.internal"
@@ -16,8 +18,8 @@ env ?= local
 gk-instances ?= 2
 docker-snapshot ?= true
 
-ifndef SERVICE_NAME
-$(error SERVICE_NAME is not set)
+ifndef APP_SERVICE_NAME
+$(error APP_SERVICE_NAME is not set)
 endif
 
 #ifeq (${env}, ci)
@@ -51,10 +53,10 @@ help:
 	@echo ""
 
 .PHONY: build
-build: prepare.config b.clean b.build d.build
+build: prepare.config b.clean b.build.app b.build.demo d.build.app d.build.demo
 
 .PHONY: build.native
-build.native: prepare.config b.clean b.build d.build.native
+build.native: prepare.config b.clean b.build.app b.build.demo d.build.native.app d.build.native.demo
 
 .PHONY: test.unit
 test.unit:
@@ -122,8 +124,11 @@ stop.world:
 b.clean:
 	./gradlew -no-build-cache -PbuildVersion=${BUILD_VERSION} clean
 
-b.build:
-	./gradlew quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
+b.build.app:
+	./gradlew :app:quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
+
+b.build.demo:
+	./gradlew :demo:quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
 
 d.login:
 	docker login -u ${DOCKER_USER} ${DOCKER_PASSWORD} ${DOCKER_REPO}
@@ -134,9 +139,14 @@ d.login:
 #d.build:
 #	docker build -f src/main/docker/Dockerfile -t graphkeeper/graphkeeper .
 
-d.build:
-	docker build -f src/main/docker/Dockerfile.jvm -t ${IMAGE_NAME} .
+d.build.app:
+	docker build -f app/src/main/docker/Dockerfile.jvm -t ${APP_IMAGE_NAME} .
 
-d.build.native:
-	docker build -f src/main/docker/Dockerfile.native -t ${IMAGE_NAME} .
+d.build.native.app:
+	docker build -f app/src/main/docker/Dockerfile.native -t ${APP_IMAGE_NAME} .
 
+d.build.demo:
+	docker build -f demo/src/main/docker/Dockerfile.jvm -t ${DEMO_IMAGE_NAME} .
+
+d.build.native.demo:
+	docker build -f demo/src/main/docker/Dockerfile.native -t ${DEMO_IMAGE_NAME} .

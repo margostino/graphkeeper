@@ -11,3 +11,5 @@ pluginManagement {
     }
 }
 rootProject.name="graphkeeper"
+include("app")
+include("demo")

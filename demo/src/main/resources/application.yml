@@ -1,0 +1,103 @@
+"%dev":
+  quarkus:
+    http:
+      port: 8080
+    package:
+      type: fast-jar
+    rest-client:
+      ping:
+        uri: http://gobox:10001
+        scope: javax.inject.Singleton
+      healthCheck:
+        uri: http://gobox:10001
+        scope: javax.inject.Singleton
+
+"%docker":
+  quarkus:
+    http:
+      port: 8080
+    package:
+      type: uber-jar
+
+"%native":
+  quarkus:
+    package:
+      type: native
+    native:
+      container-build: true
+      container-runtime: docker
+      builder-image: margostino/quarkus-build-aarch64 # only for aarch64, disable otherwise
+#      additional-build-args: --initialize-at-run-time=org.apache.http.conn.ssl.SSLConnectionSocketFactory, --initialize-at-build-time=org.apache.http.conn.ssl.SSLConnectionSocketFactory, --trace-class-initialization=org.apache.http.conn.ssl.SSLConnectionSocketFactory
+      additional-build-args: -J-Dorg.jboss.resteasy.microprofile.defaultToURLConnectionHttpClient=true
+    smallrye-graphql:
+      ui:
+        always-include: true
+    rest-client:
+      ping:
+        uri: http://host.docker.internal:10000
+        scope: javax.inject.Singleton
+      healthCheck:
+        uri: http://host.docker.internal:10000
+        scope: javax.inject.Singleton
+
+quarkus:
+  banner:
+    path: header.txt
+
+  log:
+    level: INFO
+    category:
+      "org.margostino":
+        level: ALL
+      "io.quarkus":
+        level: INFO
+      "org.apache":
+        level: INFO
+    console:
+      json: false
+
+  smallrye-graphql:
+    ui:
+      always-include: true
+    events:
+      enabled: true
+    schema-include-directives: true
+
+graphql:
+  file: schema.graphql
+  types:
+      air_pollution:
+        - name: wikipedia
+          url: http://host.docker.internal:10000/indicator-bad-request
+          indicators:
+            - carbon_monoxide
+        - name: esa
+          url: http://host.docker.internal:10000/indicators
+          indicators:
+            - non_methane_volatile_organic_compounds
+        - name: owid
+          url: http://host.docker.internal:10000/indicators
+          indicators:
+            - death_rate
+
+      co2_emission:
+        - name: wikipedia
+          url: http://host.docker.internal:10000/indicator-bad-request
+          indicators:
+            - co2_waste_emission
+        - name: esa
+          url: http://host.docker.internal:10000/indicators
+          indicators:
+            - co2_emission_per_capita
+        - name: owid
+          url: http://host.docker.internal:10000/indicators
+          indicators:
+            - co2_transport_emission
+
+      energy_consumption:
+        - name: wikipedia
+          url: http://host.docker.internal:10000/indicator-bad-request
+          indicators:
+            - solar
+            - wind
+            - nuclear

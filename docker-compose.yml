@@ -56,6 +56,24 @@ services:
       extra_hosts:
         - "host.docker.internal:host-gateway"
 
+  demo:
+    image: margostino/demo:1.0.0-SNAPSHOT
+    container_name: demo
+    environment:
+      - QUARKUS_PROFILE=docker
+    networks:
+      - demo
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "localhost:8080/ping | grep UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   hazelcast_manager:
     image: hazelcast/management-center
     container_name: hazelcast_manager
@@ -65,7 +83,6 @@ services:
       - graphkeeper_1
       - graphkeeper_2
     ports:
-      - "8080:8080"
       - "8081:8081"
     volumes:
         - ./docker/hazelcast/cluster.yml:/opt/hazelcast/cluster.yml
