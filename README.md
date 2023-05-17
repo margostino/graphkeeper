@@ -13,8 +13,9 @@ GraphKeeper might fit for cases where the amount of time and effort for deployin
 your application side-by-side with GraphKeeper may save time and make your process more agile and flexible.
 
 1. GraphQL Schema changes very often (i.e. daily, weekly).
-2. GraphQL Schema only for Query Types 
+2. GraphQL Schema only for Query Types.
 3. Data Fetchers share same API contract downstream.
+4. Not able to use external and central Database or other type of storage (e.g. DynamoDB, S3)
 
 GraphKeeper can be containerized and deployed side-by-side with its client application server, or as a remote service.
 

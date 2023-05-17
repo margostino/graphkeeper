@@ -1,17 +1,17 @@
 package org.margostino.api;
 
-import io.smallrye.common.annotation.Blocking;
+import io.smallrye.common.annotation.NonBlocking;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Query;
 
-@Blocking
 @GraphQLApi
+@NonBlocking
 public class GraphQLResource {
 
     @Query
+    @NonBlocking
     @Description("placeholder")
-    @Blocking
     public String ping() {
         return "pong";
     }

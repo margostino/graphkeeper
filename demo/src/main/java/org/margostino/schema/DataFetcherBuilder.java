@@ -20,21 +20,21 @@ import static java.util.stream.Collectors.toList;
 
 public class DataFetcherBuilder {
 
-    protected static GraphQLCodeRegistry build(GraphQLConfig graphQLConfig, List<GraphQLFieldDefinition> definitions) {
+    protected static GraphQLCodeRegistry build(GraphQLConfig graphQLConfig, List<GraphQLFieldDefinition> fieldDefinitions) {
         Map<String, List<DataFetcherConfig>> types = graphQLConfig.types();
 
         Map<String, DataFetcher<?>> dataFetchers = new HashMap<>();
 
-        for (GraphQLFieldDefinition definition : definitions) {
-            final String typeName = definition.getName();
-            List<DataFetcherConfig> dataFetcherConfigs = ofNullable(types.get(typeName)).orElse(emptyList());
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            final String fieldDefinitionName = fieldDefinition.getName();
+            List<DataFetcherConfig> dataFetcherConfigs = ofNullable(types.get(fieldDefinitionName)).orElse(emptyList());
 
             List<DataFetcherService> demoDataFetchers = dataFetcherConfigs.stream()
                     .map(DataFetcherBuilder::createHttpService)
                     .collect(toList());
 
-            DemoDataFetcher dataFetcher = new DemoDataFetcher(typeName, demoDataFetchers);
-            dataFetchers.put(typeName, dataFetcher);
+            DemoDataFetcher dataFetcher = new DemoDataFetcher(fieldDefinitionName, demoDataFetchers);
+            dataFetchers.put(fieldDefinitionName, dataFetcher);
         }
 
         return GraphQLCodeRegistry.newCodeRegistry()

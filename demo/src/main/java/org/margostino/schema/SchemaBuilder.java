@@ -12,13 +12,14 @@ public class SchemaBuilder {
     public static GraphQLSchema.Builder build(String schemaSource, GraphQLConfig graphQLConfig, GraphQLSchema.Builder builder) {
         TypeDefinitionRegistry schemaDefinition = SchemaLoader.load(schemaSource);
         Set<GraphQLDirective> directives = DirectiveBuilder.build(schemaDefinition);
-        List<GraphQLFieldDefinition> indicators = FieldBuilder.build(schemaDefinition, directives);
+        List<GraphQLFieldDefinition> fieldDefinitions = FieldBuilder.build(schemaDefinition, directives);
 
         GraphQLObjectType queryType = GraphQLObjectType.newObject()
                 .name("Query")
-                .fields(indicators)
+                .fields(fieldDefinitions)
                 .build();
-        GraphQLCodeRegistry codeRegistry = DataFetcherBuilder.build(graphQLConfig, indicators);
+
+        GraphQLCodeRegistry codeRegistry = DataFetcherBuilder.build(graphQLConfig, fieldDefinitions);
 
         return builder.query(queryType)
                 .clearDirectives()

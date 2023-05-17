@@ -13,11 +13,11 @@ import static java.lang.String.format;
 public class AppLifecycleBean {
 
     void onStart(@Observes StartupEvent ev) {
-        Log.info(format("The application SVS is starting with profile `%s`", ProfileManager.getActiveProfile()));
+        Log.info(format("DEMO is starting with profile `%s`", ProfileManager.getActiveProfile()));
     }
 
     void onStop(@Observes ShutdownEvent ev) {
-        Log.info("The application is stopping...");
+        Log.info("DEMO is stopping...");
     }
 
 }
