@@ -1,0 +1,116 @@
+version: '3'
+
+# https://taskfile.dev/usage/
+
+env:
+  - BUILD_VERSION=1.0.0-SNAPSHOT
+  - DOCKER_HOST=host.docker.internal
+  - APP_IMAGE_NAME=${DOCKER_REPO}/${APP_SERVICE_NAME}:${BUILD_VERSION}
+  - DEMO_IMAGE_NAME=${DOCKER_REPO}/${DEMO_SERVICE_NAME}:${BUILD_VERSION}
+  - DOCKER_PROJECT_NAME=graphkeeper
+
+tasks:
+  prepare-config:
+    cmds:
+      - ./scripts/build prepare_config_files
+
+  stop-world:
+    cmds:
+      - ./scripts/docker stop_and_clean_docker_world
+
+  test-unit:
+    cmds:
+      - ./gradlew test
+
+  test-integration:
+    cmds:
+      - ./gradlew cleanIntegrationTest integrationTest
+
+  docker-down:
+    cmds:
+      - docker-compose down -v || true
+      - docker-compose rm --force
+        -docker rm "$(docker ps -a -q)" -f || true
+
+  docker-logs:
+    cmds:
+      - ./scripts/docker-logs
+
+  docker-wait:
+    cmds:
+      - ./scripts/docker wait_and_validate
+
+  docker-up:
+    cmds:
+      - docker-compose -f up -d --remove-orphans --build
+
+  docker-gk-up:
+    cmds:
+      - docker-compose up -d --force-recreate --build graphkeeper_1
+
+  docker-run:
+    cmds:
+      - task: docker-down
+      - task: docker-up
+      - task: docker-wait
+      - docker-compose ps
+
+  clean:
+    cmds:
+      - ./gradlew -no-build-cache -PbuildVersion=${BUILD_VERSION} clean
+
+  build-app:
+    cmds:
+      - ./gradlew :app:quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
+
+  build-demo:
+    cmds:
+      - ./gradlew :demo:quarkusBuild -Dquarkus.profile=docker -PbuildVersion=${BUILD_VERSION} -x :test
+
+  build-docker-app:
+    cmds:
+      - docker build -f app/src/main/docker/Dockerfile.jvm -t ${APP_IMAGE_NAME} .
+
+  build-docker-demo:
+    cmds:
+      - docker build -f demo/src/main/docker/Dockerfile.jvm -t ${DEMO_IMAGE_NAME} .
+
+  build-native-app:
+    cmds:
+      - docker build -f app/src/main/docker/Dockerfile.native -t ${APP_IMAGE_NAME} .
+
+  build-native-demo:
+    cmds:
+      - docker build -f demo/src/main/docker/Dockerfile.native -t ${DEMO_IMAGE_NAME} .
+
+  build:
+    cmds:
+      - task: build-app
+      - task: build-demo
+      - task: build-docker-app
+      - task: build-docker-demo
+
+  build-native:
+    cmds:
+      - task: build-app
+      - task: build-demo
+      - task: build-native-app
+      - task: build-native-demo
+
+  load:
+    cmds:
+      - launchctl bootstrap system /Library/LaunchDaemons/org.babel.agent.plist
+
+  list:
+    cmds:
+      - launchctl list | grep org.babel.agent
+
+  unload:
+    cmds:
+      - launchctl bootout system /Library/LaunchDaemons/org.babel.agent.plist
+
+  restart:
+    cmds:
+      - task: unload
+      - task: load
+      - task: list
